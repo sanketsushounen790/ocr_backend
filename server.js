@@ -5,10 +5,12 @@ const cors = require('cors');
 const bodyParser = require('body-parser')
 const port = 5000
 
-const config = {
+const vieConfig = {
     lang: "vie",
-    // oem: 1,
-    // psm: 3,
+}
+
+const enConfig = {
+    lang: "eng",
 }
 
 // Use CORS middleware
@@ -40,14 +42,19 @@ app.get('/', (req, res) => {
 app.post('/convert', async (req, res) => {
 
     const base64String = req.body?.data?.base64String
+    const language = req?.body?.data?.language
     //console.log(req.body?.data?.base64String)
+
+    console.log(language)
 
     //Chuyen base64String thanh jpg
     await convertBase64StringToJpgImage(base64String)
 
     //Chuyen tu hinh jpg sang text
-    tesseract
-        .recognize("./public/images/text_image.jpg", config)
+    if(language === "en"){
+        console.log("Chuyen doi theo he tieng Anh")
+        tesseract
+        .recognize("./public/images/text_image.jpg", enConfig)
         .then((text) => {
             console.log("Result:", text)
             //chuyen ve frontend text
@@ -56,6 +63,20 @@ app.post('/convert', async (req, res) => {
         .catch((error) => {
             console.log(error.message)
         })
+    }
+    else {
+        console.log("Chuyen doi theo he tieng Viet")
+        tesseract
+        .recognize("./public/images/text_image.jpg", vieConfig)
+        .then((text) => {
+            console.log("Result:", text)
+            //chuyen ve frontend text
+            res.send({ text: text })
+        })
+        .catch((error) => {
+            console.log(error.message)
+        })
+    }
 
 })
 
