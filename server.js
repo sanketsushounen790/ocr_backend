@@ -90,22 +90,22 @@ app.get("/", (req, res) => {
 
 // })
 app.get("/e-search", async (req, res) => {
-    console.log("Get the book flow");
-    const book = await elasticClient.search({
-      index: "books",
-      query: {
-        match: {
-          chapter_title: "1008 THE WEALTH OF NATIONS",
-        },
+  console.log("Get the book flow");
+  const book = await elasticClient.search({
+    index: "books",
+    query: {
+      match: {
+        chapter_title: "1008 THE WEALTH OF NATIONS",
       },
-    });
-  
-    console.log(book);
-    res.json(book);
-})
+    },
+  });
+
+  console.log(book);
+  res.json(book);
+});
 
 app.post("/search", async (req, res) => {
-    console.log("Get the book flow");
+  console.log("Get the book flow");
   const book = await elasticClient.search({
     index: "books",
     query: {
@@ -126,48 +126,52 @@ app.post("/search", async (req, res) => {
   //Chuyen base64String thanh jpg
   await convertBase64StringToJpgImage(base64String);
 
-  
-
   //Chuyen tu hinh jpg sang text
   if (language === "eng") {
     console.log("Chuyen doi theo he tieng Anh");
     tesseract
       .recognize("./public/images/text_image.jpg", enConfig)
       .then(async (text) => {
-        console.log("Result:");
-        console.log(text)
+        console.log("Extract Text Result:");
+        console.log(text);
         //console.log(text.slice(0, text.indexOf("\n")));
 
         const extractedChapterTitle = text.slice(0, text.indexOf("\n"));
-        const extractedChapterTitleWithouNumber = extractedChapterTitle.replace(/[0-9]/g, '')
+        const extractedChapterTitleWithouNumber = extractedChapterTitle.replace(
+          /[0-9]/g,
+          ""
+        );
 
-        const extractedText = text.slice(text.indexOf("\n"))
-        console.log(extractedChapterTitleWithouNumber)
+        const extractedText = text.slice(text.indexOf("\n"));
+        //console.log(extractedChapterTitleWithouNumber)
 
         const book = await elasticClient.search({
-            index: "books",
-            query: {
-                match: {
-                    chapter_title: extractedChapterTitleWithouNumber,
-                  },
+          index: "books",
+          query: {
+            match: {
+              chapter_title: extractedChapterTitleWithouNumber,
             },
-          });
-        
-          //console.log(book.hits.hits);
-        
-          let highestScore = book.hits.hits[0];
-        
-          for (let i = 1; i < book.hits.hits.length; i++) {
-            if (book.hits.hits[i]["_score"] > highestScore) {
-              highestScore = book.hits.hits[i];
-            }
-          }
-        
-          console.log(highestScore);
-        //chuyen ve frontend text
+          },
+        });
+
+        console.log(book.hits.hits);
+
+        //Kiem sach chinh xac nhat (highest score)
+        let highestScore = book.hits.hits[0];
+
+        // for (let i = 1; i < book.hits.hits.length; i++) {
+        //   if (book.hits.hits[i]["_score"] > highestScore) {
+        //     highestScore = book.hits.hits[i];
+        //   }
+        // }
+
+        console.log("Sach chinh xac nhat");
+        console.log(highestScore);
+
+        //Chuyen ve frontend
         res.json({
-            book: highestScore,
-            text: extractedText
+          book: highestScore,
+          text: extractedText,
         });
       })
       .catch((error) => {
